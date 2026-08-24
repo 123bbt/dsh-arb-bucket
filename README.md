@@ -1,6 +1,7 @@
 # @dsh-external/dsh-arb-bucket
 
-以ARB桶为灵感的插件，旨在于GUI提供图片尺寸墙的修改接口，并且使输入图片自适应尺寸墙
+以ARB桶为灵感的插件，旨在于GUI提供图片尺寸墙的修改接口，并且使输入图片自适应尺寸墙。
+
 ARB 桶（ARB bucket）：在 DSH 设置菜单里直接调节「图片附件上限」三项配置，并把新上限热生效到
 官方 `@deepseek-ai/dsh-attachment-local` 插件（不修改任何官方包文件）。
 
