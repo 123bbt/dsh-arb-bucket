@@ -7,7 +7,9 @@ const CLIENT_EXTERNALS = [
   'react', 'react/jsx-runtime', 'react-dom', 'react-dom/client',
   'cordis',
   '@deepseek-ai/dsh-client-ui-slots',
-    '@deepseek-ai/dsh-client-web-react',
+  '@deepseek-ai/dsh-client-web-react',
+  // rc.8 起快照选择器宿主包（bindSnapshotSelector 一级回落），保持 external
+  '@deepseek-ai/dsh-client-ui-renderer',
   '@deepseek-ai/dsh-client-runtime/client',
 ]
 

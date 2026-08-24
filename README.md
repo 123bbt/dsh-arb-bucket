@@ -40,3 +40,14 @@ npm run build:client
 
 产物提交在 `lib/`（git 安装无需本地构建）。插件仅声明 peerDependencies：
 `@deepseek-ai/cordis`、`@deepseek-ai/schemastery`、`@deepseek-ai/dsh-settings`。
+
+## 兼容性
+
+客户端快照选择器采用三级回落：
+
+1. `@deepseek-ai/dsh-client-ui-renderer`（rc.8+）的 `useSyncExternalStoreWithSelector`
+2. `@deepseek-ai/dsh-client-web-react.bindSnapshotSelector`（rc.7 官方包）
+3. React 原生 `useSyncExternalStore` 兜底
+
+因此即使当前内核的客户端模块表不提供 `dsh-client-web-react`（报
+`require(...) missed the module table`），设置菜单入口仍可正常注册、展示与保存。

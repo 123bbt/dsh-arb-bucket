@@ -7,13 +7,43 @@
  *  - 组件内 scope.set(field, value) 写设置 → host scope.watch → entry.update 热生效。
  *
  * 构建约定：产物 lib/client.js 为 ModuleLoader CJS 包裹（见 tsdown.config.ts）。
- * 运行时依赖（react / dsh-client-web-react）由客户端模块注册表解析，故此处
+ * 运行时依赖（react / 快照选择器宿主包）由客户端模块注册表解析，故此处
  * 使用运行时 require 而非静态 import（编译期零外部类型依赖）。
  */
 declare const require: (id: string) => any
 
 const react = require('react')
-const { bindSnapshotSelector } = require('@deepseek-ai/dsh-client-web-react')
+
+// bindSnapshotSelector 三级回落（对齐 dsh-conversation-tweaks 等社区插件，issue #124）：
+//   1) dsh-client-ui-renderer.useSyncExternalStoreWithSelector —— rc.8 内核真实导出时
+//   2) dsh-client-web-react.bindSnapshotSelector —— rc.7 官方包（client-compat 注入页面模块表）
+//   3) react 原生 useSyncExternalStore 兜底 —— 宿主源快照引用稳定，selector 每渲染求值
+let bindSnapshotSelector: (source: any) => (selector: any, isEqual?: any) => any = undefined as any
+try {
+  const rendererMod: any = require('@deepseek-ai/dsh-client-ui-renderer')
+  if (typeof rendererMod.useSyncExternalStoreWithSelector === 'function') {
+    const useSESWS = rendererMod.useSyncExternalStoreWithSelector
+    bindSnapshotSelector = (source) => {
+      const subscribe = (fn: any) => source.subscribe(fn)
+      const getSnapshot = () => source.getSnapshot()
+      return (selector: any, isEqual: any) => useSESWS(subscribe, getSnapshot, void 0, selector, isEqual)
+    }
+  }
+} catch { /* 模块不在页面表（rc.7 及更早内核）→ 走下一级回落 */ }
+if (!bindSnapshotSelector) {
+  try {
+    const webReactMod: any = require('@deepseek-ai/dsh-client-web-react')
+    if (typeof webReactMod.bindSnapshotSelector === 'function') bindSnapshotSelector = webReactMod.bindSnapshotSelector
+  } catch { /* compat 未注入（罕见）→ react 原生兜底 */ }
+}
+if (!bindSnapshotSelector) {
+  const { useSyncExternalStore } = react
+  bindSnapshotSelector = (source) => {
+    const subscribe = (fn: any) => source.subscribe(fn)
+    const getSnapshot = () => source.getSnapshot()
+    return (selector: any) => selector(useSyncExternalStore(subscribe, getSnapshot))
+  }
+}
 
 const NS = 'dsh-arb-bucket'
 const PLUGIN_ID = '@dsh-external/dsh-arb-bucket'
