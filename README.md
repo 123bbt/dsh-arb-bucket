@@ -25,6 +25,7 @@ dsh plugin --profile web add git+https://github.com/123bbt/dsh-arb-bucket
 
 - 调大 `maxImageBytes` 会让 base64 请求体膨胀约 ×4/3，多图并发容易撞上游 413；请按实际网络/服务端承载量调整。
 - `maxImagePixels` 与 `maxImageDimension` 由 `dsh-attachment-local` 在解码阶段独立拦截（`IMAGE_TOO_MANY_PIXELS` / `IMAGE_DIMENSION_TOO_LARGE`）。
+- **单边维度过宽不会因调大字节/像素上限而放行**：必须把 `maxImageDimension` 一并调大，否则超 2000px 的宽图仍会被 `IMAGE_DIMENSION_TOO_LARGE` 拦截。
 - DSH 仍有额外限制不在本插件范围内：`maxImagesPerMessage = 20`、`maxMessageImageBytes = 104_857_600`。
 - 调大后重启 DSH 不会丢设置：值保存在 `dsh-arb-bucket` 设置命名空间，启动时自动推送一次。
 

@@ -148,11 +148,13 @@ function ArbBucketCard(props: any): any {
   const { useScope, scope } = props
   const snap = useScope((s: any) => s)
   const [status, setStatus] = react.useState('')
+  // SettingsScopeController snapshot 是包装对象 { status, value, ... }，解码值在 snap.value（官方 dsh-prompt-custom 同款）。
+  const readyValue = snap && snap.status === 'ready' && snap.value ? snap.value : {}
 
   const value = {
-    maxImageBytes: Number(snap?.maxImageBytes ?? DEFAULTS.maxImageBytes),
-    maxImagePixels: Number(snap?.maxImagePixels ?? DEFAULTS.maxImagePixels),
-    maxImageDimension: Number(snap?.maxImageDimension ?? DEFAULTS.maxImageDimension),
+    maxImageBytes: Number(readyValue.maxImageBytes ?? DEFAULTS.maxImageBytes),
+    maxImagePixels: Number(readyValue.maxImagePixels ?? DEFAULTS.maxImagePixels),
+    maxImageDimension: Number(readyValue.maxImageDimension ?? DEFAULTS.maxImageDimension),
   }
 
   const setField = async (field: string, raw: number) => {

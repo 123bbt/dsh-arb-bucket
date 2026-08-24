@@ -14,7 +14,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis';
 export declare const name = "@dsh-external/dsh-arb-bucket";
-/** dsh-settings 服务由 dsh-base bundle 装配（conversation-tweaks 同款依赖声明）。 */
+/** dsh-settings 服务由 dsh-base bundle 装配；ctx.loader.entries() 需显式注入 'loader'。 */
 export declare const inject: string[];
 /** attachment-local 0.1.x 的官方默认值（与代码内 default 保持一致）。 */
 export declare const ATTACHMENT_DEFAULTS: {
