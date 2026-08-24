@@ -1,6 +1,6 @@
 {
     "name": "@dsh-external/dsh-arb-bucket",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "ARB bucket: adjust DSH image attachment limits (maxImageBytes / maxImagePixels / maxImageDimension) from the settings menu",
     "private": true,
     "type": "module",

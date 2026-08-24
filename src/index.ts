@@ -315,25 +315,56 @@ function findAttachmentStore(ctx: AppContext): AttachmentStoreLike | undefined {
   }
 }
 
-/** 幂等地给 store 实例挂载缩放层。fiber 重启后新实例需要重新挂载。 */
-function patchStore(ctx: AppContext, store: AttachmentStoreLike, getLimits: () => LimitsConfig): void {
-  if ((store as unknown as Record<symbol, boolean>)[PATCH_TAG]) return
-  const original = store.saveImages.bind(store)
-  Object.defineProperty(store, PATCH_TAG, { value: true, configurable: false })
-  store.saveImages = async (inputs: AttachmentInput[]) => {
-    const limits = getLimits()
-    const resized: AttachmentInput[] = []
-    for (const input of inputs) {
-      try {
-        resized.push(await fitImage(input, limits))
-      } catch (error) {
-        ctx.logger.warn('[dsh-arb-bucket] image resize failed, keeping original: ' + String(error))
-        resized.push(input)
-      }
-    }
-    return original(resized)
+/** 找到保存 saveImages 方法定义的 AttachmentStore.prototype。 */
+function findSaveImagesPrototype(store: AttachmentStoreLike): object | undefined {
+  let proto = Object.getPrototypeOf(store)
+  while (proto && Object.getPrototypeOf(proto) !== null) {
+    if (proto.constructor && proto.constructor.name === 'AttachmentStore') return proto
+    proto = Object.getPrototypeOf(proto)
   }
-  ctx.logger.info('[dsh-arb-bucket] resize layer attached to attachment store')
+  return proto
+}
+
+/**
+ * 挂载 ARB 桶缩放层。
+ *
+ * 注意：不能在 store 实例上直接覆盖 saveImages（实测实例字段赋值被忽略，
+ * toString 仍为 native code）。正确攻击点是 AttachmentStore 类原型：
+ * 覆盖原型上的 saveImages，所有子类实例（含 LocalAttachmentStore）自动继承。
+ * 缩放参数直接读 store.imageLimits（正是我们从设置推送到 attachment-local 的那三项），
+ * 因此无需在插件与 store 之间额外传配置源。
+ */
+function patchStore(ctx: AppContext, store: AttachmentStoreLike, getLimits: () => LimitsConfig): void {
+  const proto = findSaveImagesPrototype(store)
+  if (!proto) return
+  const original = (proto as { saveImages: unknown }).saveImages as
+    | ((inputs: AttachmentInput[]) => Promise<unknown[]>)
+    | undefined
+  if (typeof original !== 'function') return
+  if ((proto as unknown as Record<symbol, boolean>)[PATCH_TAG]) return
+  Object.defineProperty(proto, PATCH_TAG, { value: true, configurable: false })
+  ;(proto as { saveImages: unknown }).saveImages = function (this: AttachmentStoreLike, inputs: AttachmentInput[]): Promise<unknown[]> {
+    const il = (this.imageLimits ?? {}) as Partial<LimitsConfig>
+    const limits: LimitsConfig = {
+      maxImageBytes: il.maxImageBytes ?? getLimits().maxImageBytes,
+      maxImagePixels: il.maxImagePixels ?? getLimits().maxImagePixels,
+      maxImageDimension: il.maxImageDimension ?? getLimits().maxImageDimension,
+    }
+    const resized: AttachmentInput[] = []
+    const loop = async (): Promise<unknown[]> => {
+      for (const input of inputs) {
+        try {
+          resized.push(await fitImage(input, limits))
+        } catch (error) {
+          ctx.logger.warn('[dsh-arb-bucket] image resize failed, keeping original: ' + String(error))
+          resized.push(input)
+        }
+      }
+      return original.call(this, resized)
+    }
+    return loop()
+  }
+  ctx.logger.info('[dsh-arb-bucket] resize layer attached to AttachmentStore prototype')
 }
 
 /** 把三项上限合并进 attachment-local 的 entry config（保留其 config 其余键）。 */
