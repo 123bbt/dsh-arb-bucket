@@ -5,6 +5,11 @@
 ARB 桶（ARB bucket）：在 DSH 设置菜单里直接调节「图片附件上限」三项配置，并把新上限热生效到
 官方 `@deepseek-ai/dsh-attachment-local` 插件（不修改任何官方包文件）。
 
+核心行为：**输入图片会自动适配到尺寸约束之下最接近的缩放尺寸再进入会话缓存**。
+超过 `maxImageDimension`（单边）或 `maxImagePixels`（总像素）的图片会被等比缩放到约束内
+最大尺寸；超过 `maxImageBytes` 的图片会逐级降质量/换格式，必要时再缩小，
+最终写入附件缓存的是缩放/重编码后的小图（content-addressed sha256，ref 指向小图）。
+
 | 配置项 | 含义 | 默认值 | 可调范围 |
 | --- | --- | --- | --- |
 | `maxImageBytes` | 单张图片字节上限 | 3.5 MB = 3_670_016 bytes | 1 KB … 256 MB |
@@ -23,9 +28,9 @@ dsh plugin --profile web add git+https://github.com/123bbt/dsh-arb-bucket
 
 ## 副作用与边界
 
-- 调大 `maxImageBytes` 会让 base64 请求体膨胀约 ×4/3，多图并发容易撞上游 413；请按实际网络/服务端承载量调整。
-- `maxImagePixels` 与 `maxImageDimension` 由 `dsh-attachment-local` 在解码阶段独立拦截（`IMAGE_TOO_MANY_PIXELS` / `IMAGE_DIMENSION_TOO_LARGE`）。
-- **单边维度过宽不会因调大字节/像素上限而放行**：必须把 `maxImageDimension` 一并调大，否则超 2000px 的宽图仍会被 `IMAGE_DIMENSION_TOO_LARGE` 拦截。
+- 客户端上传前仍会按 `imageLimits.maxImageBytes` 做字节预检（`dsh-client-ui-conversation`）。想放行更大的原始上传，先把 `maxImageBytes` 调到足够大；ARB 桶随后在服务端把超尺寸/超字节的图缩放、重编码成小缓存。
+- `maxImagePixels` / `maxImageDimension` 现在由 ARB 桶自动适配：超限图不会报错，而是等比缩放到约束内最接近的尺寸再入库（`IMAGE_TOO_MANY_PIXELS` / `IMAGE_DIMENSION_TOO_LARGE` 仍作为解码失败/无法处理时的兜底）。
+- `maxImageBytes` 作为缓存字节目标：超过上限时先保尺寸降质量/换格式，仍超则逐步缩小，尽量产出不超过字节上限且尺寸损失最小的图片。
 - DSH 仍有额外限制不在本插件范围内：`maxImagesPerMessage = 20`、`maxMessageImageBytes = 104_857_600`。
 - 调大后重启 DSH 不会丢设置：值保存在 `dsh-arb-bucket` 设置命名空间，启动时自动推送一次。
 
@@ -39,7 +44,7 @@ dsh plugin --profile web add git+https://github.com/123bbt/dsh-arb-bucket
 npm run build:client
 ```
 
-产物提交在 `lib/`（git 安装无需本地构建）。插件仅声明 peerDependencies：
+产物提交在 `lib/`（git 安装无需本地构建）。宿主端声明了 `sharp` 运行时依赖（与官方 `dsh-attachment-local` 同一版本 ^0.35.3），peerDependencies 仍为 `@deepseek-ai/cordis`、`@deepseek-ai/schemastery`、`@deepseek-ai/dsh-settings`。
 `@deepseek-ai/cordis`、`@deepseek-ai/schemastery`、`@deepseek-ai/dsh-settings`。
 
 ## 兼容性

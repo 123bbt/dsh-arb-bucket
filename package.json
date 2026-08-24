@@ -1,48 +1,51 @@
 {
-    "name":  "@dsh-external/dsh-arb-bucket",
-    "version":  "0.0.2",
-    "description":  "ARB bucket: adjust DSH image attachment limits (maxImageBytes / maxImagePixels / maxImageDimension) from the settings menu",
-    "private":  true,
-    "type":  "module",
-    "main":  "./lib/index.js",
-    "types":  "./lib/types/index.d.ts",
-    "files":  [
-                  "lib"
-              ],
-    "license":  "BSD-3-Clause",
-    "peerDependencies":  {
-                             "@deepseek-ai/cordis":  "\u003e=4.0.0-rc \u003c5",
-                             "@deepseek-ai/dsh-settings":  "\u003e=0.0.1-rc \u003c2",
-                             "@deepseek-ai/schemastery":  "\u003e=3.18.0 \u003c4"
-                         },
-    "devDependencies":  {
-                            "@types/node":  "^24.13.3",
-                            "tsdown":  "^0.22.14",
-                            "typescript":  "^5.9.3"
-                        },
-    "scripts":  {
-                    "build":  "bash scripts/build.sh",
-                    "typecheck":  "tsc -p tsconfig.json --noEmit",
-                    "build:client":  "tsdown"
-                },
-    "exports":  {
-                    ".":  {
-                              "types":  "./lib/types/index.d.ts",
-                              "default":  "./lib/index.js"
-                          },
-                    "./client":  {
-                                     "types":  "./lib/types/client/index.d.ts",
-                                     "default":  "./lib/client.js"
-                                 },
-                    "./package.json":  "./package.json"
-                },
-    "dsh":  {
-                "client":  {
-                               "inject":  [
-                                              "@deepseek-ai/dsh-client-runtime",
-                                              "@deepseek-ai/dsh-client-ui-settings"
-                                          ],
-                               "platform":  "web"
-                           }
-            }
+    "name": "@dsh-external/dsh-arb-bucket",
+    "version": "0.0.3",
+    "description": "ARB bucket: adjust DSH image attachment limits (maxImageBytes / maxImagePixels / maxImageDimension) from the settings menu",
+    "private": true,
+    "type": "module",
+    "main": "./lib/index.js",
+    "types": "./lib/types/index.d.ts",
+    "files": [
+        "lib"
+    ],
+    "license": "BSD-3-Clause",
+    "peerDependencies": {
+        "@deepseek-ai/cordis": ">=4.0.0-rc <5",
+        "@deepseek-ai/dsh-settings": ">=0.0.1-rc <2",
+        "@deepseek-ai/schemastery": ">=3.18.0 <4"
+    },
+    "devDependencies": {
+        "@types/node": "^24.13.3",
+        "tsdown": "^0.22.14",
+        "typescript": "^5.9.3"
+    },
+    "scripts": {
+        "build": "bash scripts/build.sh",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "build:client": "tsdown"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib/types/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./client": {
+            "types": "./lib/types/client/index.d.ts",
+            "default": "./lib/client.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "dsh": {
+        "client": {
+            "inject": [
+                "@deepseek-ai/dsh-client-runtime",
+                "@deepseek-ai/dsh-client-ui-settings"
+            ],
+            "platform": "web"
+        }
+    },
+    "dependencies": {
+        "sharp": "^0.35.3"
+    }
 }

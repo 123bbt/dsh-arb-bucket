@@ -16,3 +16,7 @@ declare module '@deepseek-ai/schemastery' {
 declare module '@deepseek-ai/dsh-settings' {
   export function settingsNamespace(value: string): string
 }
+declare module 'sharp' {
+  const sharp: any
+  export default sharp
+}
